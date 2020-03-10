@@ -24,3 +24,11 @@ Print frequency and bandwidth of found peaks.
     $ cat toto.csv 
     time,frequency_mhz,width_khz,peak,diff
     20151222_032034,460.796509,21.000000,-74.304337,4.142212
+
+credits
+=======
+
+This was orignally ripped from https://git.zx2c4.com/gr-scan/ and was modified
+for Ettus' USRP. That repo seems to be ripped from https://github.com/pinkavaj/gr-scan.
+As a result of this discovery, the original repo was re-based on top of a fork of
+pinkavaj's original repository.

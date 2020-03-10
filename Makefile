@@ -20,7 +20,7 @@
 VERSION = 20160104
 CXXFLAGS ?= -O3 -march=native -fomit-frame-pointer
 CXXFLAGS +=-DVERSION="\"gr-scan $(VERSION)\"" -Wall
-LDLIBS = -lgnuradio-filter -lgnuradio-blocks -lgnuradio-pmt -lgnuradio-fft -lgnuradio-runtime -lgnuradio-osmosdr -lboost_system
+LDLIBS = -lgnuradio-filter -lgnuradio-blocks -lgnuradio-pmt -lgnuradio-fft -lgnuradio-runtime -luhd -lgnuradio-uhd -lboost_system
 
 PREFIX ?= /usr
 DESTDIR ?=

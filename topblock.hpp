@@ -22,13 +22,15 @@
 #include <stdint.h>
 
 #include <gnuradio/top_block.h>
-#include <osmosdr/source.h>
 #include <gnuradio/blocks/stream_to_vector.h>
 #include <gnuradio/fft/fft_vcc.h>
 #include <gnuradio/blocks/complex_to_mag_squared.h>
 #include <gnuradio/filter/single_pole_iir_filter_ff.h>
 #include <gnuradio/blocks/nlog10_ff.h>
 #include "scanner_sink.hpp"
+
+#include <gnuradio/uhd/usrp_source.h>
+#include <uhd/usrp/multi_usrp.hpp>
 
 class TopBlock : public gr::top_block
 {
@@ -41,7 +43,6 @@ public:
 		gr::top_block("Top Block"),
 		vector_length(sample_rate / fft_width),
 		window(GetWindow(vector_length)),
-		source(osmosdr::source::make(device_args)), /* OsmoSDR Source */
 		stv(gr::blocks::stream_to_vector::make(sizeof(float) * 2, vector_length)), /* Stream to vector */
 		/* Based on the logpwrfft (a block implemented in python) */
 		fft(gr::fft::fft_vcc::make(vector_length, true, window, false, 1)),
@@ -51,13 +52,22 @@ public:
 		/* Sink - this does most of the interesting work */
 		sink(make_scanner_sink(source, vector_length, centre_freq_1, centre_freq_2, sample_rate, bandwidth1, bandwidth2, step, avg_size, spread, threshold, ptime, outcsv))
 	{
-		/* Set up the OsmoSDR Source */
-		source->set_sample_rate(sample_rate);
+		const uhd::stream_args_t stream_args("fc32", "sc16"); // FIXME: These should come from the commandline
+		const size_t mboard(0);
+
+		auto uhd = uhd::usrp::multi_usrp::make(device_args);
+
+		/* Set up the UHD device */
+		source = gr::uhd::usrp_source::make(uhd->get_sync_source(mboard), stream_args, true);
+		source->set_samp_rate(sample_rate);
 		source->set_center_freq(centre_freq_1);
-		source->set_freq_corr(0.0);
-		source->set_gain_mode(false);
 		source->set_gain(10.0);
-		source->set_if_gain(20.0);
+
+		//source->set_freq_corr(0.0);
+		//source->set_gain_mode(false);
+		//source->set_if_gain(20.0);
+
+		source->set_clock_source("internal", mboard);
 
 		/* Set up the connections */
 		connect(source, 0, stv, 0);
@@ -95,7 +105,7 @@ private:
 
 	size_t vector_length;
 	std::vector<float> window;
-	osmosdr::source::sptr source;
+	gr::uhd::usrp_source::sptr source;
 	gr::blocks::stream_to_vector::sptr stv;
 	gr::fft::fft_vcc::sptr fft;
 	gr::blocks::complex_to_mag_squared::sptr ctf;

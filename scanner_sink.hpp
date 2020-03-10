@@ -25,13 +25,14 @@
 
 #include <gnuradio/block.h>
 #include <gnuradio/io_signature.h>
-#include <osmosdr/source.h>
 
+#include <gnuradio/uhd/usrp_source.h>
+#include <uhd/usrp/multi_usrp.hpp>
 
 class scanner_sink : public gr::block
 {
 public:
-	scanner_sink(osmosdr::source::sptr source, unsigned int vector_length, double centre_freq_1,
+	scanner_sink(gr::uhd::usrp_source::sptr source, unsigned int vector_length, double centre_freq_1,
 		     double centre_freq_2, double bandwidth0, double bandwidth1, double bandwidth2,
 		     double step, unsigned int avg_size, double spread, double threshold, double ptime,
 		     const std::string &outcsv) :
@@ -122,7 +123,8 @@ private:
 				}
 
 				m_centre_freq_1 += m_step; //calculate the frequency we should change to
-				double actual = m_source->set_center_freq(m_centre_freq_1); //change frequency
+				auto result = m_source->set_center_freq(m_centre_freq_1);
+				double actual = result.actual_rf_freq;
 				if ((m_centre_freq_1 - actual < 10.0) && (actual - m_centre_freq_1 < 10.0)) //success
 					break; //so stop changing frequency
 			}
@@ -259,7 +261,7 @@ private:
 	}
 
 	std::set<double> m_signals;
-	osmosdr::source::sptr m_source;
+	gr::uhd::usrp_source::sptr m_source;
 	float *m_buffer;
 	unsigned int m_vector_length;
 	unsigned int m_count;
@@ -280,7 +282,7 @@ private:
 
 /* Shared pointer thing gnuradio is fond of */
 typedef boost::shared_ptr<scanner_sink> scanner_sink_sptr;
-scanner_sink_sptr make_scanner_sink(osmosdr::source::sptr source, unsigned int vector_length, double centre_freq_1, double centre_freq_2, double bandwidth0, double bandwidth1, double bandwidth2, double step, unsigned int avg_size, double spread, double threshold, double ptime, const std::string &outcsv)
+scanner_sink_sptr make_scanner_sink(gr::uhd::usrp_source::sptr source, unsigned int vector_length, double centre_freq_1, double centre_freq_2, double bandwidth0, double bandwidth1, double bandwidth2, double step, unsigned int avg_size, double spread, double threshold, double ptime, const std::string &outcsv)
 {
 	return boost::shared_ptr<scanner_sink>(new scanner_sink(source, vector_length, centre_freq_1, centre_freq_2, bandwidth0, bandwidth1, bandwidth2, step, avg_size, spread, threshold, ptime, outcsv));
 }
